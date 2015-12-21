@@ -1,0 +1,157 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+<style>
+.card{
+	width: 330px;
+	border: 1px solid gray;
+	box-shadow: 1px 1px 3px #888;
+	border-top: 10px solid #00468c;
+	min-height: 250px;
+	padding-: 10px;
+	margin: 10px;
+}
+
+.bigcard{
+	width: 1032px;
+	border: 1px solid gray;
+	box-shadow: 1px 1px 3px #888;
+	border-top: 10px solid gray;
+	min-height: 250px;
+	padding-: 10px;
+	margin: 10px;
+	content: url("./finaldiagram3.png");
+}
+
+img{
+	    width: 70px;
+	      margin: 10px;
+}
+
+h1{
+	    margin-left: 100px;
+	      margin-top: -70px;
+}
+
+p{
+	  margin: 10px;
+	    font-family: segoe ui;
+	      line-height: 1.4em;
+	        font-size: 1.2em;
+}
+
+#mainbox{
+	  font-family: calibri;
+	    box-sizing: border-box;
+	      justify-content: center;
+	        display: flex;
+		flex-wrap: wrap;
+}
+
+label{
+	cursor: default;
+	padding: 10px;
+	font: normal 22px segoe !important;
+}
+</style>
+<title>Controller</title> 
+<meta name="viewport" content="width=device-width, initial-scale=1"> 
+<link rel="stylesheet"
+    href="http://code.jquery.com/mobile/1.2.1/jquery.mobile-1.2.1.min.css" />
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.2.1/jquery.mobile-1.2.1.min.js"></script>
+<script>
+$(function() {
+	$( "#slider-3" ).on( 'slidestop', function(e, ui) {
+		$.post('cgi-bin/script.py',
+				{ value: e.target.value, identifier: e.target.id }
+		      );
+	});
+	$( "#cons" ).on( 'slidestop', function(e, ui) {
+		$.post('cgi-bin/script.py',
+				{ value: e.target.value, identifier: e.target.id }
+		      );
+	});
+	$( "#failproducer" ).on( 'slidestop', function(e, ui) {
+		$.post('cgi-bin/script.py',
+				{ value: e.target.value, identifier: e.target.id }
+		      );
+	});
+	$( "#failcons" ).on( 'slidestop', function(e, ui) {
+		$.post('cgi-bin/script.py',
+				{ value: e.target.value, identifier: e.target.id }
+		      );
+	});
+	$( "#disc" ).on( 'slidestop', function(e, ui) {
+		$.post('cgi-bin/script.py',
+				{ value: e.target.value, identifier: e.target.id }
+		      );
+	});
+});
+</script>
+</head> 
+<body> 
+
+<div data-role="content">	
+<div id="mainbox">
+<div class="card">
+	<img src="./sens.png" alt=""/>
+<h1>Producer</h1>
+<div data-role="fieldcontain">
+	<br>
+	<br>
+	<label for="slider-3">Rate:</label>
+      <input type="range" data-role="slider" name="slider-3" id="slider-3" value="25" min="0" max="100" data-theme="a" data-track-theme="b" />
+</div>
+<div data-role="fieldcontain">
+	<label for="failproducer">Failover:</label>
+<select name="failproducer" id="failproducer" data-role="slider">
+	<br>
+	<option value="fail">Fail</option>
+		<option value="norm">Norm</option>
+</select> 
+</div>
+</div>
+
+<div class="card">
+	<img src="./an.png" alt=""/>
+<h1>Consumer</h1>
+	<br>
+<div data-role="fieldcontain">
+	<label for="cons">Status:</label>
+<select name="cons" id="cons" data-role="slider">
+	<br>
+<option value="stop">Stop</option>
+	<option value="run">Run</option>
+</select> 
+</div>
+
+<div data-role="fieldcontain">
+	<label for="failcons">Failover:</label>
+<select name="failcons" id="failcons" data-role="slider">
+	<br>
+	<option value="fail">Fail</option>
+		<option value="norm">Norm</option>
+</select> 
+</div><!-- /failbutton -->
+</div>
+
+<div class="card">
+	<img src="./net.png" alt=""/>
+<h1>Connectivity</h1>
+	<br>
+<div data-role="fieldcontain">
+	<label for="disc">Link:</label>
+<select name="disc" id="disc" data-role="slider">
+	<br>
+		<option value="disc">Disc</option>
+			<option value="norm">Norm</option>
+		</select> 
+</div>
+</div>
+</div>
+
+<div class="bigcard">
+</div>
+</div>
+</div>

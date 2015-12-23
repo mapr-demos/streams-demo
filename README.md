@@ -4,7 +4,7 @@ This repo contains the source code for the MapR Streams demo.  A video of the de
 The repo is provided mainly to give access to code samples.  Instructions for setting up the demo require some configuration and cluster resources and may not be covered completely here, but it should be enough to mostly get you going.
 
 # Prerequisites
-This repo contains only the source code for the demo functionality for use as example code.  If you would like to run the demo in its entirety, you will need the following -- these require some additional setup on your own and are not covered here:
+Here you will find the source code for the demo functionality for use as example code, for us in building your own consumer, producer, etc.  If you would like to run the demo in its entirety, you will need the following -- these require some additional setup on your own and are not covered here:
 - Two MapR clusters with Streams enabled
 - Two streams created with replication between the two clusters
 - OpenTSDB and Grafana installed on one of the nodes in the cluster
@@ -22,7 +22,7 @@ The demo consists of the following parts:
 - Web pages with javascript to control the demo (files in the `demo_html` directory)
 - Python script to receive the POST commands from the web pages and perform actions (`srv.py`)
 - Python script to report Streams metrics to OpenTSDB (`report.py`)
-- Helper script to run the consumer from ssh (`start_cons.sh`)
+- Helper scripts in Python and shell (`start_cons.sh` and `msend.py`)
 
 The producer must be run from the same node as the Python web script as they communicate over a named pipe.
 
@@ -41,7 +41,9 @@ On one of the MapR nodes, let's call this the reporting host.  This can be on ei
 
 On another one of the MapR nodes, let's call this the consumer host, it can be the same as the reporting host.  This should be on the 'remote' cluster.
 - Copy the file `start-cons.sh` to the machine (this must be the same path as in START_PATH in srv.py above)
-- Copy over `consumer.c` and `build.sh` to this machine as well.  Run `build.sh` to build the consumer.
+- Copy over `consumer.c`, `msend.py` and `build.sh` to this machine as well.
+- Edit consumer.c to ensure variables are correct for your setup, such as METRIC_SENDER_PATH to the helper script that sends metrics.
+- Run `build.sh` to build the consumer.
 - Make a named pipe for the consumer with `mkfifo /tmp/conspipe`
 
 On another one of the MapR nodes, let's call this the OpenTSDB host, it can be the same as any of the hosts above:

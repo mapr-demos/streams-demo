@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
-#include <marlin/marlin.h>
+#include <streams/streams.h>
 #include <sys/time.h>
 
 int keySize = 100;
@@ -73,7 +73,7 @@ is_pipe_ready(int fd)
  */
 void
 producerCallback(int32_t err,
-    marlin_producer_record_t record,
+    streams_producer_record_t record,
     int partitionid,
     int64_t offset,
     void *ctx)
@@ -90,12 +90,12 @@ producerCallback(int32_t err,
 	    ": %d \n", offset);
 	*/
 	    
-	ret_val = marlin_producer_record_get_key(record,
+	ret_val = streams_producer_record_get_key(record,
 	    (const void **)&keyp, &ks);
 	if (EXIT_SUCCESS != ret_val) {
 		DPRINTF("get_key() failed\n");
 	}
-	ret_val = marlin_producer_record_get_value(record,
+	ret_val = streams_producer_record_get_value(record,
 	    (const void **)&valp, &vs);
 
 	if (EXIT_SUCCESS != ret_val) {
@@ -106,7 +106,7 @@ producerCallback(int32_t err,
 	free(keyp);
 	free(valp);
 
-	ret_val = marlin_producer_record_destroy(record);
+	ret_val = streams_producer_record_destroy(record);
 	if (EXIT_SUCCESS != ret_val) {
 		DPRINTF("destroy failed\n");
 	}
@@ -118,7 +118,7 @@ producerCallback(int32_t err,
  */
 int
 producer_init(const char *fullTopicName,
-		marlin_topic_partition_t *tp, marlin_config_t *confp, marlin_producer_t *prodp)
+		streams_topic_partition_t *tp, streams_config_t *confp, streams_producer_t *prodp)
 {
 	int ret_val;
 
@@ -132,11 +132,11 @@ producer_init(const char *fullTopicName,
 	DPRINTF("\nSTEP 1: Creating a topic partition... %s \n",
 	    fullTopicName);
 
-	ret_val = marlin_topic_partition_create(
+	ret_val = streams_topic_partition_create(
 	    fullTopicName, 0, tp);
 
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_topic_partition_create() failed\n");
+		DPRINTF("streams_topic_partition_create() failed\n");
 		return (ret_val);
 	}
 
@@ -145,9 +145,9 @@ producer_init(const char *fullTopicName,
 	 */
 	DPRINTF("\nSTEP 2: Creating a config...\n");
 
-	ret_val = marlin_config_create(confp);
+	ret_val = streams_config_create(confp);
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_config_create() failed\n");
+		DPRINTF("streams_config_create() failed\n");
 		return (ret_val);
 	}
 
@@ -156,44 +156,44 @@ producer_init(const char *fullTopicName,
 	 * set is simply the default for the specified configuration
 	 * parameter.
 	 */
-	ret_val = marlin_config_set(*confp, "buffer.memory", "33554432");
+	ret_val = streams_config_set(*confp, "buffer.memory", "33554432");
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_config_set() failed\n");
+		DPRINTF("streams_config_set() failed\n");
 		return (ret_val);
 	}
-	ret_val = marlin_config_set(*confp, "marlin.buffer.max.time.ms", "500");
+	ret_val = streams_config_set(*confp, "streams.buffer.max.time.ms", "500");
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_config_set() failed\n");
+		DPRINTF("streams_config_set() failed\n");
 		return (ret_val);
 	}
 	
 	/* Create a producer. */
 	DPRINTF("\nSTEP 3: Creating a producer... \n");
-	ret_val = marlin_producer_create(*confp, prodp);
+	ret_val = streams_producer_create(*confp, prodp);
 
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_producer_create() failed\n");
+		DPRINTF("streams_producer_create() failed\n");
 		return (ret_val);
 	}
 	return (EXIT_SUCCESS);
 }
 
 int
-producer_shutdown(marlin_topic_partition_t *topic,
-		marlin_config_t *config, marlin_producer_t *producer)
+producer_shutdown(streams_topic_partition_t *topic,
+		streams_config_t *config, streams_producer_t *producer)
 {
 	int ret_val;
 
 	/* destroy the producer. */
 	DPRINTF("\nDestroying the Producer... \n");
-	ret_val = marlin_producer_destroy(*producer);
+	ret_val = streams_producer_destroy(*producer);
 	if (EXIT_SUCCESS != ret_val) {
 		DPRINTF("producer destroy failed\n");
 		return (ret_val);
 	}
 
 	/* destroy the topic partition */
-	ret_val = marlin_topic_partition_destroy(*topic);
+	ret_val = streams_topic_partition_destroy(*topic);
 	if (EXIT_SUCCESS != ret_val) {
 		DPRINTF("partition destroy failed\n");
 		return (ret_val);
@@ -201,7 +201,7 @@ producer_shutdown(marlin_topic_partition_t *topic,
 
 	/* destroy the config */
 	DPRINTF("\nDestroying the config...\n");
-	ret_val = marlin_config_destroy(*config);
+	ret_val = streams_config_destroy(*config);
 	if (EXIT_SUCCESS != ret_val) {
 		DPRINTF("partition destroy failed\n");
 		return (ret_val);
@@ -264,9 +264,9 @@ producer(const char *fullTopicName, const char *backupTopicName,
 	long tdiff;
 	const char *cur_topic = fullTopicName;
 	char namebuf[100];
-	marlin_topic_partition_t topic;
-	marlin_config_t config;
-	marlin_producer_t producer;
+	streams_topic_partition_t topic;
+	streams_config_t config;
+	streams_producer_t producer;
 
 	ret_val = producer_init(cur_topic, &topic, &config, &producer);
 	if (EXIT_SUCCESS != ret_val) {
@@ -386,24 +386,24 @@ producer(const char *fullTopicName, const char *backupTopicName,
 		strcpy(linebuf, line);
 
 		/* Create a record that contains the message. */
-		marlin_producer_record_t record;
-		ret_val = marlin_producer_record_create(
+		streams_producer_record_t record;
+		ret_val = streams_producer_record_create(
 		    topic, keybuf, strlen(keybuf) + 1,
 		    linebuf, strlen(linebuf) + 1, &record);
 
 		if (EXIT_SUCCESS != ret_val) {
-			DPRINTF("marlin_producer_record_create() failed\n");
+			DPRINTF("streams_producer_record_create() failed\n");
 			return (ret_val);
 		}
 
 		/* Buffer the message. */
-		/* DPRINTF("calling marlin_producer_send()\n"); */
+		/* DPRINTF("calling streams_producer_send()\n"); */
 		ret_val =
-		    marlin_producer_send(producer,
+		    streams_producer_send(producer,
 		    record, producerCallback, NULL);
 	
 		if (EXIT_SUCCESS != ret_val) {
-			DPRINTF("marlin_producer_send() failed\n");
+			DPRINTF("streams_producer_send() failed\n");
 			return (ret_val);
 		}
 		msg_idx++;
@@ -411,9 +411,9 @@ producer(const char *fullTopicName, const char *backupTopicName,
 		/* Flush the message.
 		 * this is the synchronous approach but reduces throughput
 		 *
-		ret_val = marlin_producer_flush(producer);
+		ret_val = streams_producer_flush(producer);
 		if (EXIT_SUCCESS != ret_val) {
-			DPRINTF("marlin_producer_flush() failed\n");
+			DPRINTF("streams_producer_flush() failed\n");
 			return (ret_val);
 		}
 		DPRINTF("Produced: MESSAGE %d: ", msg_idx);

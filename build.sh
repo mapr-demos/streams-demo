@@ -4,7 +4,7 @@
 export MAPR_HOME=/opt/mapr
 GCC_OPTS="-ggdb -std=c99 \
  -Wl,--allow-shlib-undefined -I. -I${MAPR_HOME}/include \
--L${MAPR_HOME}/lib -lMapRClient -L${MAPR_HOME}/lib -lMarlinNative"
+-L${MAPR_HOME}/lib -lMapRClient -L${MAPR_HOME}/lib"
 
 #Linking path
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${MAPR_HOME}/lib

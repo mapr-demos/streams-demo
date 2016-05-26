@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <marlin/marlin.h>
+#include <streams/streams.h>
 #include <sys/time.h>
 
 int debug_on = 0;
@@ -88,12 +88,12 @@ is_pipe_ready(int fd)
 
 int
 consumer_shutdown(
-		marlin_config_t *config, marlin_consumer_t *consumer)
+		streams_config_t *config, streams_consumer_t *consumer)
 {
 	int ret_val = EXIT_SUCCESS;
 
 	/* commit everything we've read */
-	if (0 != marlin_consumer_commit_all(*consumer, 1)) {
+	if (0 != streams_consumer_commit_all_sync(*consumer)) {
 		DPRINTF("error committing\n");
 	} else {
 		DPRINTF("commit successful\n");
@@ -101,15 +101,15 @@ consumer_shutdown(
 
 	/* Destroy the consumer. */
 	DPRINTF("\nDestroying the consumer... \n");
-	ret_val = marlin_consumer_destroy(*consumer);
+	ret_val = streams_consumer_destroy(*consumer);
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_cons_d() failed\n");
+		DPRINTF("streams_cons_d() failed\n");
 		return (ret_val);
 	}
 
 	/* Destroy the config. */
 	DPRINTF("\nSTEP 8: Destroy the config...\n");
-	marlin_config_destroy(*config);
+	streams_config_destroy(*config);
 	DPRINTF("\n****** CONSUMER END ******\n");
 
 	*config = *consumer = 0;
@@ -118,7 +118,7 @@ consumer_shutdown(
 
 int
 consumer_init(const char *fullTopicName, const char *ftn2, const char *gid,
-		marlin_config_t *confp, marlin_consumer_t *consp)
+		streams_config_t *confp, streams_consumer_t *consp)
 {
 	int ret_val = EXIT_SUCCESS;
 	const char *subs_topics[2];
@@ -140,9 +140,9 @@ consumer_init(const char *fullTopicName, const char *ftn2, const char *gid,
 	 */
 
 	DPRINTF("\nSTEP 2: Creating a config...\n");
-	ret_val = marlin_config_create(confp);
+	ret_val = streams_config_create(confp);
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_config_create() " " failed\n");
+		DPRINTF("streams_config_create() " " failed\n");
 		return (ret_val);
 	}
 
@@ -153,14 +153,14 @@ consumer_init(const char *fullTopicName, const char *ftn2, const char *gid,
 	DPRINTF("\nSTEP 3: Setting the"
 	       "config parameter auto.offset.reset to" "'earliest'.. \n");
 
-	marlin_config_set(*confp, "auto.offset.reset", "earliest");
-	marlin_config_set(*confp, "group.id", gid);
+	streams_config_set(*confp, "auto.offset.reset", "earliest");
+	streams_config_set(*confp, "group.id", gid);
 
 	/* Create a consumer. */
 	DPRINTF("\nSTEP 3: Creating consumer... \n");
-	ret_val = marlin_consumer_create(*confp, NULL, NULL, consp);
+	ret_val = streams_consumer_create(*confp, consp);
 	if (EXIT_SUCCESS != ret_val) {
-		DPRINTF("marlin_consumer_create() " " failed\n");
+		DPRINTF("streams_consumer_create() " " failed\n");
 		return (ret_val);
 	}
 
@@ -168,7 +168,8 @@ consumer_init(const char *fullTopicName, const char *ftn2, const char *gid,
 	DPRINTF("\nSTEP 4: Subscribing " " the consumer to the topic...\n");
 	subs_topics[0] = fullTopicName;
 	subs_topics[1] = ftn2;
-	ret_val = marlin_consumer_subscribe_topics(*consp, subs_topics, 2);
+	ret_val = streams_consumer_subscribe_topics(*consp,
+	    subs_topics, 2, NULL, NULL, NULL);
 	if (EXIT_SUCCESS != ret_val) {
 		DPRINTF("subsc_topics() failed\n");
 		return (ret_val);
@@ -183,8 +184,8 @@ consumer(const char *fullTopicName, const char *ftn2,
 {
 	int ret_val;
 	int code;
-	marlin_config_t config;
-	marlin_consumer_t consumer;
+	streams_config_t config;
+	streams_consumer_t consumer;
 	struct timeval now, last_now;
 	const char *cur_topic = fullTopicName;
 	int tot = 0, last_tot = 0;
@@ -215,7 +216,7 @@ consumer(const char *fullTopicName, const char *ftn2,
 	DPRINTF("\nSTEP 6: Polling for messages:\n");
 	gettimeofday(&last_now, NULL);
 	for(;;) {
-		marlin_consumer_record_t *records;
+		streams_consumer_record_t *records;
 		long poll_time_out = 1000;
 		uint32_t nRecords;
 		int d;
@@ -278,7 +279,7 @@ consumer(const char *fullTopicName, const char *ftn2,
 
 		/* now poll for messages */
 		ret_val =
-		    marlin_consumer_poll(consumer,
+		    streams_consumer_poll(consumer,
 					 poll_time_out, &records, &nRecords);
 
 		if (EXIT_SUCCESS != ret_val) {
@@ -290,7 +291,7 @@ consumer(const char *fullTopicName, const char *ftn2,
 		for (int rec = 0; rec < nRecords; ++rec) {
 			uint32_t nummsgs_c;
 			ret_val =
-			    marlin_consumer_record_get_message_count(records
+			    streams_consumer_record_get_message_count(records
 								     [rec],
 								     &nummsgs_c);
 			if (EXIT_SUCCESS != ret_val) {
@@ -305,15 +306,15 @@ consumer(const char *fullTopicName, const char *ftn2,
 			for (uint32_t i = 0; i < nummsgs_c; ++i) {
 				/* Get the message key. */
 				ret_val =
-				    marlin_msg_get_key(*records,
+				    streams_msg_get_key(*records,
 						       i, &key_c, &key_size_c);
 				if (EXIT_SUCCESS != ret_val) {
-					DPRINTF("marlin_mgk() failed\n");
+					DPRINTF("streams_mgk() failed\n");
 					return (ret_val);
 				}
 				/* get msg val. */
 				ret_val =
-				    marlin_msg_get_value(*records, i, &value_c,
+				    streams_msg_get_value(*records, i, &value_c,
 							 &value_size_c);
 				if (EXIT_SUCCESS != ret_val) {
 					DPRINTF("msg_gv()" " failed\n");
@@ -327,7 +328,7 @@ consumer(const char *fullTopicName, const char *ftn2,
 			}
 		}
 		DPRINTF("committing...\n");
-		if (0 != marlin_consumer_commit_all(consumer, 1)) {
+		if (0 != streams_consumer_commit_all_sync(consumer)) {
 			DPRINTF("error committing\n");
 		} else {
 			DPRINTF("commit successful\n");

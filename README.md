@@ -55,3 +55,15 @@ At this point you should be ready to go:
 - Open another browser session to the Grafana session you created above: `http://<host>:3000`
 
 You should now be able to fail-over the consumer, producer and break connectivity between the two hosts.  The OpenTSDB metric names (referenced when building the Grafana dashboard) are prefixed with `streamstats` and contain the stream name.
+
+## Metrics used in the Grafana dashboard
+
+The following metrics are used in the Grafana dashboard to visualize the state of the streams and cluster.  Starting at the upper left, and proceeding clockwise:
+- producer.primary_rate - the rate at which the producer is writing messages to the primary cluster
+- producer.backup_rate - the rate at which the producer is writing messages to the backup cluster
+- streamstats./mapr/mdemo2/data_remote.sens_hq.total_rate (aliased to remote_rate in Grafana) - the rate at which data is being ingested at the primary cluster
+- streamstats./mapr/mdemo/data_hq.sens_hq.total_rate (aliased to hq-rate in Grafana) - the rate at which the data is being ingested at the backup cluster
+- consumer_all.primary_rate - the rate at which the consumer is consuming data from the primary cluster
+- consumer_all.backup_rate - the rate at which the consumer is consuming data from the backup cluster
+- streamstats./mapr/mdemo/data_hq.sens_local.unconsumed - the total unconsumed data in the primary cluster
+

@@ -306,7 +306,7 @@ consumer(const char *fullTopicName, const char *ftn2,
 			for (uint32_t i = 0; i < nummsgs_c; ++i) {
 				/* Get the message key. */
 				ret_val =
-				    streams_msg_get_key(*records,
+				    streams_msg_get_key(records[rec],
 						       i, &key_c, &key_size_c);
 				if (EXIT_SUCCESS != ret_val) {
 					DPRINTF("streams_mgk() failed\n");
@@ -314,7 +314,7 @@ consumer(const char *fullTopicName, const char *ftn2,
 				}
 				/* get msg val. */
 				ret_val =
-				    streams_msg_get_value(*records, i, &value_c,
+				    streams_msg_get_value(records[rec], i, &value_c,
 							 &value_size_c);
 				if (EXIT_SUCCESS != ret_val) {
 					DPRINTF("msg_gv()" " failed\n");

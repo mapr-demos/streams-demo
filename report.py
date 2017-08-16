@@ -6,7 +6,7 @@
 # for use on a dashboard, etc.
 #
 
-import subprocess
+from subprocess import check_output
 import commands
 import potsdb
 import time
@@ -14,15 +14,17 @@ import ciso8601
 import sys
 import thread
 from threading import Timer
+import json
 
 
 if (len(sys.argv) != 2):
-	print "usage: %s %s" (sys.argv[0], "/path_to_stream")
+	print "usage: %s %s" % (sys.argv[0], "/path_to_stream")
 	sys.exit(-1)
 SPATH = sys.argv[1]
 
 # set this to the hostname of the host running opentsdb
-METRICS_HOST = 'node71'
+# this is an example EC2 hostname
+METRICS_HOST = 'ip-172-31-14-229'
 
 # set this to the preferred prefix of metrics reported to opentsdb
 NAME_PREFIX = "streamstats"
@@ -39,6 +41,7 @@ UNCONS_OFFSET_TOLERANCE = 12000
 # for demo purposes when CLDB is unreachable
 FUDGE_RATE = 5
 
+# assumes JSON version of the command
 def get_cmd_output(p, skip, dval):
 	a = []
 	c = 1
@@ -74,20 +77,18 @@ topic_cons_cache = {}
 topic_prod_cache = {}
 
 while True:
-	p = subprocess.Popen(['/usr/bin/timeout', DEF_TIMEOUT, \
-	    '/usr/bin/maprcli', \
-	    'stream', 'topic', 'list', '-path', SPATH ],
-	    stdout=subprocess.PIPE, 
-	    stderr=subprocess.PIPE)
-	
 	# first get the list of topics
-	tdump = get_cmd_output(p, 1, None)
+	oput = check_output(['/usr/bin/timeout', DEF_TIMEOUT, \
+	    '/usr/bin/maprcli', \
+	    'stream', 'topic', 'list', '-path', SPATH, '-json' ])
+	j = json.loads(oput)
+	td = j['data']
 	tlist = []
-	for l in tdump:
-		t, p, ls, c, ml, ps = l.split()
-		print "topic is %s" % t
-		tlist.append(t)
-	
+	for t in td:
+		tn = t['topic']
+		print "topic is %s" % tn
+		tlist.append(tn)
+	    
 	for tp in tlist:
 		dval = None
 		if tp not in topicbuf:
@@ -103,17 +104,14 @@ while True:
 				dval = [ dval1, dval2 ]
 		tstamp = int(time.time())
 
-		p = subprocess.Popen(['/usr/bin/timeout', DEF_TIMEOUT, \
+		oput = check_output(['/usr/bin/timeout', DEF_TIMEOUT, \
 		    '/usr/bin/maprcli', \
 		    'stream', \
-		    'topic', 'info', '-path', SPATH, '-topic', tp, ],
-		    stdout=subprocess.PIPE, 
-		    stderr=subprocess.PIPE)
-		onetopicdump = get_cmd_output(p, 1, dval)
-	
-		for ot in onetopicdump:
-			# print "line: %s" % ot
-			thistopicbuf.append([tstamp, ot])
+		    'topic', 'info', '-path', SPATH, '-topic', tp, '-json' ])
+		tj = json.loads(oput)
+		ot = tj['data'][0]
+
+		thistopicbuf.append([tstamp, ot])
 		topicbuf[tp] = thistopicbuf
 
 	print "gathered %d topic(s), sending metrics" % len(tlist)
@@ -131,17 +129,23 @@ while True:
 			continue
 		prev_ts, prev_line = data[(len(data) - 2)]
 
-		fid, mintimestamp, partitionid, \
-		    mintimestampacrossconsumers, servers, \
-		    logicalsize, minoffsetacrossconsumers, \
- 		    maxtimestamp,  \
-		    maxoffset, physicalsize, master = latest_line.split()
+		mintimestamp = latest_line['mintimestamp']
+		partitionid = latest_line['partitionid']
+		mintimestampacrossconsumers = latest_line['mintimestampacrossconsumers']
+		logicalsize = latest_line['logicalsize']
+		minoffsetacrossconsumers = latest_line['minoffsetacrossconsumers']
+		maxtimestamp = latest_line['maxtimestamp']
+		maxoffset = latest_line['maxoffset']
+		physicalsize = latest_line['physicalsize']
 
-		p_fid, p_mintimestamp, p_partitionid, \
-		    p_mintimestampacrossconsumers, p_servers, \
-		    p_logicalsize, p_minoffsetacrossconsumers, \
- 		    p_maxtimestamp, p_maxoffset, p_physicalsize, \
-		    p_master = prev_line.split()
+		p_mintimestamp = prev_line['mintimestamp']
+		p_partitionid = prev_line['partitionid']
+		p_mintimestampacrossconsumers = prev_line['mintimestampacrossconsumers']
+		p_logicalsize = prev_line['logicalsize']
+		p_minoffsetacrossconsumers = prev_line['minoffsetacrossconsumers']
+		p_maxtimestamp = prev_line['maxtimestamp']
+		p_maxoffset = prev_line['maxoffset']
+		p_physicalsize = prev_line['physicalsize']
 
 		# this means we didn't get any data, just continue to report
 		# the same metric we had (for demo purposes)

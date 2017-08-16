@@ -1,5 +1,5 @@
 # streams-demo
-This repo contains the source code for the MapR Streams demo.  A video of the demo can be seen here:  https://www.mapr.com/products/www.youtube.com/watch?v=hY-GJzSNQ8k
+This repo contains the source code for the MapR Streams demo.  A video of the demo can be seen here: http://www.youtube.com/watch?v=hY-GJzSNQ8k
 
 The repo is provided mainly to give access to code samples.  Instructions for setting up the demo require some configuration and cluster resources and may not be covered completely here, but it should be enough to mostly get you going.
 
